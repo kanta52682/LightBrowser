@@ -167,10 +167,6 @@ javascript:(function() {
             el.style.minHeight = '50px';
 
             el.setAttribute('data-processed', 'true');
-            el.onclick = function(e) {
-                e.preventDefault();
-                Android.loadResource(this.getAttribute('data-src'), this.getAttribute('data-id'));
-            };
         }
     }
 
@@ -193,45 +189,7 @@ javascript:(function() {
 })();
 """
 
-class WebAppInterface(
-    private val webView: WebView,
-    private val onResourceRequested: (String) -> Unit
-) {
-    @JavascriptInterface
-    fun loadResource(originalSrc: String, elementId: String) {
-        // Let the app know this URL should be allowed
-        onResourceRequested(originalSrc)
 
-        val script = """
-        javascript:(function() {
-            const el = document.querySelector('[data-id="${'$'}{elementId}"]');
-            if (el) {
-                el.style.backgroundColor = '';
-                el.style.border = '';
-                el.onclick = null;
-                el.removeAttribute('data-processed');
-
-                if (el.tagName === 'VIDEO') {
-                    const sources = el.getElementsByTagName('source');
-                    for(let i=0; i<sources.length; i++) {
-                       const src = sources[i].getAttribute('data-src');
-                       if (src) {
-                           sources[i].setAttribute('src', src);
-                       }
-                    }
-                    el.setAttribute('src', el.getAttribute('data-src'));
-                    el.load();
-                } else {
-                    el.setAttribute('src', el.getAttribute('data-src'));
-                }
-            }
-        })();
-        """
-        webView.post {
-            webView.evaluateJavascript(script, null)
-        }
-    }
-}
 
 @Composable
 fun BrowserControls(
@@ -407,20 +365,10 @@ fun BrowserScreen(initialUrl: String?, onShowBookmarks: () -> Unit) {
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
 
-    val allowedUrls = remember { Collections.synchronizedSet(mutableSetOf<String>()) }
-
     val webView = remember {
         WebView(context).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            addJavascriptInterface(
-                WebAppInterface(this) { requestedUrl ->
-                    allowedUrls.add(requestedUrl)
-                    // We need to trigger a re-evaluation for the WebView to re-request the URL
-                    post { evaluateJavascript("document.querySelector('[data-src=\"${'$'}{requestedUrl}\"]').src = '${'$'}{requestedUrl}';", null) }
-                },
-                "Android"
-            )
 
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, newUrl: String?) {
@@ -439,13 +387,6 @@ fun BrowserScreen(initialUrl: String?, onShowBookmarks: () -> Unit) {
                 ): WebResourceResponse? {
                     if (request == null) return null
                     if (!mediaBlockingEnabled) return null // Allow all if blocking is disabled
-
-                    val requestUrl = request.url.toString()
-
-                    if (allowedUrls.contains(requestUrl)) {
-                        allowedUrls.remove(requestUrl) // Allow this request once
-                        return null // Proceed with the network request
-                    }
 
                     if (isMediaRequest(request)) {
                         // Block media requests by returning a valid, empty response
