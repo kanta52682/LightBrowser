@@ -214,15 +214,17 @@ fun BrowserControls(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
-            value = url,
-            onValueChange = onUrlChange,
-            label = { Text("Enter URL") },
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-            keyboardActions = KeyboardActions(onGo = onGo)
-        )
-        Spacer(Modifier.width(8.dp))
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = onUrlChange,
+                        label = { Text("Enter URL") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                        keyboardActions = KeyboardActions(onGo = onGo),
+                        singleLine = true,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.width(8.dp))
         Box {
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -368,7 +370,7 @@ fun BrowserScreen(initialUrl: String?, onShowBookmarks: () -> Unit) {
     val bookmarkManager = remember { BookmarkManager(context) }
 
     var url by remember { mutableStateOf(initialUrl ?: settingsManager.loadHomepage()) }
-    var mediaBlockingEnabled by remember { mutableStateOf(settingsManager.isMediaBlockingEnabled()) }
+    var mediaBlockingEnabled by remember { mutableStateOf(true) }
 
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
@@ -449,7 +451,6 @@ fun BrowserScreen(initialUrl: String?, onShowBookmarks: () -> Unit) {
                 onShowBookmarks = onShowBookmarks,
                 onToggleMediaBlocking = {
                     val newState = !mediaBlockingEnabled
-                    settingsManager.saveMediaBlocking(newState)
                     mediaBlockingEnabled = newState
                     webView.reload()
                 },
