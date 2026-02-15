@@ -200,6 +200,7 @@ fun BrowserControls(
     onForward: () -> Unit,
     onReload: () -> Unit,
     onSetHome: () -> Unit,
+    onGoHome: () -> Unit,
     onAddBookmark: () -> Unit,
     onShowBookmarks: () -> Unit,
     onToggleMediaBlocking: () -> Unit,
@@ -258,6 +259,13 @@ fun BrowserControls(
                     text = { Text("Reload") },
                     onClick = {
                         onReload()
+                        menuExpanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Go to Homepage") },
+                    onClick = {
+                        onGoHome()
                         menuExpanded = false
                     }
                 )
@@ -428,6 +436,9 @@ fun BrowserScreen(initialUrl: String?, onShowBookmarks: () -> Unit) {
                 onSetHome = {
                     settingsManager.saveHomepage(webView.url ?: url)
                     Toast.makeText(context, "Homepage set!", Toast.LENGTH_SHORT).show()
+                },
+                onGoHome = {
+                    webView.loadUrl(settingsManager.loadHomepage())
                 },
                 onAddBookmark = {
                     val currentTitle = webView.title ?: "No Title"
