@@ -36,6 +36,7 @@ import com.example.lightbrowser.ui.theme.LightBrowserTheme
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import android.content.Intent
 import java.util.Collections
 
 @Serializable
@@ -191,6 +192,8 @@ javascript:(function() {
 
 
 
+
+
 @Composable
 fun BrowserControls(
     url: String,
@@ -204,6 +207,7 @@ fun BrowserControls(
     onAddBookmark: () -> Unit,
     onShowBookmarks: () -> Unit,
     onToggleMediaBlocking: () -> Unit,
+    onShare: () -> Unit,
     mediaBlockingEnabled: Boolean,
     canGoBack: Boolean,
     canGoForward: Boolean
@@ -240,7 +244,7 @@ fun BrowserControls(
                         menuExpanded = false
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 DropdownMenuItem(
                     text = { Text("Back") },
                     onClick = {
@@ -271,7 +275,14 @@ fun BrowserControls(
                         menuExpanded = false
                     }
                 )
-                Divider()
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Share Link") },
+                    onClick = {
+                        onShare()
+                        menuExpanded = false
+                    }
+                )
                 DropdownMenuItem(
                     text = { Text("Add Bookmark") },
                     onClick = {
@@ -453,6 +464,14 @@ fun BrowserScreen(initialUrl: String?, onShowBookmarks: () -> Unit) {
                     val newState = !mediaBlockingEnabled
                     mediaBlockingEnabled = newState
                     webView.reload()
+                },
+                onShare = {
+                    val currentUrl = webView.url ?: url
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, currentUrl)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share URL"))
                 },
                 mediaBlockingEnabled = mediaBlockingEnabled,
                 canGoBack = canGoBack,
